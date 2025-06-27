@@ -707,8 +707,18 @@ class DownloadWorker(context: Context, params: WorkerParameters) :
                     return
                 }
             }
+
             log("Update notification: {notificationId: $primaryId, title: $title, status: $status, progress: $progress}")
-            NotificationManagerCompat.from(context).notify(primaryId, builder.build())
+            try {
+                if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                    NotificationManagerCompat.from(context).notify(primaryId, builder.build())
+                } else {
+                    logError("Notification permission NOT granted. Skipping notification.")
+                }
+            } catch (e: SecurityException) {
+                val err = e.message
+                logError("SecurityException when trying to send notification: $err")
+            }
             lastCallUpdateNotification = System.currentTimeMillis()
         }
     }
